@@ -15,7 +15,7 @@ import type { PluginOptions } from "./options.ts";
 export type { PluginOptions } from "./options.ts";
 
 export const PLUGIN_ID = "emdash-newsletter";
-export const PLUGIN_VERSION = "0.1.0";
+export const PLUGIN_VERSION = "0.1.1";
 
 export const ADMIN_PAGES = [
 	{ path: "/", label: "Newsletter", icon: "mail", group: "Newsletter" },

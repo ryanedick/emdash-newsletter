@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-11-09)
+
+- README: add a no-warranty disclaimer and a note on email and privacy law compliance.
+
 ## 0.1.0 (2026-11-09)
 
 First public release.
