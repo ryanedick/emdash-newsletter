@@ -189,6 +189,12 @@ npm run build   # compiles src/ to dist/
 
 The tests cover opt-in, fan-out, tracking, one-click unsubscribe, segments, A/B tests, signed webhooks, retries, rate limits, automations, referrals, sponsors, publish → email, the preference center, CSV, GDPR erase, a scripted SMTP server, provider request formats, the admin flows and the Astro integration.
 
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability arising from, out of or in connection with the software or its use. See the [LICENSE](LICENSE) for the full terms.
+
+You are responsible for how you use it. That includes complying with email and privacy laws such as CAN-SPAM, GDPR and CASL, and with your email provider's terms.
+
 ## License
 
 [MIT](LICENSE) © Ryan Edick
