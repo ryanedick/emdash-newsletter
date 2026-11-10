@@ -1,0 +1,96 @@
+{
+  "name": "emdash-newsletter",
+  "version": "0.1.0",
+  "description": "A full newsletter platform for EmDash (beehiiv/Kajabi-style): subscribers, double opt-in, campaigns, A/B subjects, segments, automations, referrals, sponsor slots, tracking and a web archive. Sends through Bird, any SMTP server, SparkPost, Mailgun, Postmark, Resend, SendGrid or Amazon SES.",
+  "keywords": [
+    "emdash",
+    "emdash-plugin",
+    "newsletter",
+    "email",
+    "astro",
+    "cloudflare",
+    "d1",
+    "smtp",
+    "bird",
+    "beehiiv",
+    "mailing-list"
+  ],
+  "license": "MIT",
+  "author": "Ryan Edick",
+  "homepage": "https://github.com/ryanedick/emdash-newsletter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ryanedick/emdash-newsletter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ryanedick/emdash-newsletter/issues"
+  },
+  "type": "module",
+  "sideEffects": [
+    "./components/*.astro"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./astro": {
+      "types": "./dist/astro/index.d.ts",
+      "default": "./dist/astro/index.js"
+    },
+    "./astro/route": {
+      "types": "./dist/astro/route.d.ts",
+      "default": "./dist/astro/route.js"
+    },
+    "./plugin": {
+      "types": "./dist/plugin/index.d.ts",
+      "default": "./dist/plugin/index.js"
+    },
+    "./plugin/runtime": {
+      "types": "./dist/plugin/runtime.d.ts",
+      "default": "./dist/plugin/runtime.js"
+    },
+    "./transports": {
+      "types": "./dist/transport/index.d.ts",
+      "default": "./dist/transport/index.js"
+    },
+    "./components/SubscribeForm.astro": "./components/SubscribeForm.astro",
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "components",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "node --test --experimental-strip-types \"test/*.test.ts\"",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run typecheck && npm test"
+  },
+  "engines": {
+    "node": ">=22.6"
+  },
+  "peerDependencies": {
+    "astro": ">=6.0.0",
+    "emdash": ">=1.3.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "astro": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "astro": "^7.3.2",
+    "emdash": "^1.4.0",
+    "typescript": "^6.0.3",
+    "zod": "^4.5.4"
+  }
+}
