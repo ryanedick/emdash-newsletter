@@ -86,6 +86,7 @@ export function createNewsletter(options: NewsletterOptions) {
 			bind(core, subscribers, [
 				"subscribe",
 				"confirmByToken",
+				"confirmToken",
 				"activate",
 				"unsubscribe",
 				"unsubscribeByToken",

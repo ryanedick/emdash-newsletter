@@ -5,7 +5,7 @@
 import { enrollTrigger, stopRuns } from "./automations.ts";
 import { type Core, mapSubscriber, type Subscriber, type SubscriberStatus } from "./core.ts";
 import { changes } from "./db.ts";
-import { confirmUrl, preferencesUrl, unsubscribeUrl } from "./links.ts";
+import { CONFIRM_TTL, confirmUrl, preferencesUrl, unsubscribeUrl } from "./links.ts";
 import { applyMergeTags, emailStyles, layout, renderBody } from "./render/email.ts";
 import { drain, enqueueTransactional } from "./sender.ts";
 import type { NewsletterConfig } from "./settings.ts";
@@ -194,12 +194,27 @@ export async function sendConfirmation(core: Core, config: NewsletterConfig, sub
 }
 
 export async function confirmByToken(core: Core, token: unknown): Promise<Subscriber | null> {
-	const data = await core.signer.verify<{ s: string }>("confirm", token);
+	return (await confirmToken(core, token))?.subscriber ?? null;
+}
+
+export interface ConfirmResult {
+	subscriber: Subscriber;
+	/** True when this call did the confirming; false when they were already active. */
+	firstConfirmation: boolean;
+	/** When the confirmation link was created (ms), if the token says. */
+	sentAt: number | null;
+}
+
+/** Like `confirmByToken`, and also says whether this was the confirming click and when the link was sent. */
+export async function confirmToken(core: Core, token: unknown): Promise<ConfirmResult | null> {
+	const data = await core.signer.verify<{ s: string; x?: number }>("confirm", token);
 	if (!data?.s) return null;
 	const sub = await getSubscriber(core, data.s);
 	if (!sub) return null;
-	if (sub.status === "active") return sub;
-	return activate(core, sub.id);
+	const sentAt = typeof data.x === "number" ? data.x - CONFIRM_TTL : null;
+	if (sub.status === "active") return { subscriber: sub, firstConfirmation: false, sentAt };
+	const after = await activate(core, sub.id);
+	return after ? { subscriber: after, firstConfirmation: after.status === "active", sentAt } : null;
 }
 
 /** Marks a subscriber active and runs everything that hangs off that. Idempotent. */

@@ -388,3 +388,42 @@ test("GDPR delete removes the subscriber and anonymises history", async () => {
 	const left = db.raw.prepare("SELECT COUNT(*) AS n FROM nl_outbox WHERE email = ?").get(s.email) as { n: number };
 	assert.equal(left.n, 0);
 });
+
+test("afterConfirm: hands the reader on, knows the first confirmation", async () => {
+	const { nl, transport } = await setup();
+	await nl.subscribers.subscribe({ email: "bo@example.org" });
+	const confirm = linksIn(transport.sent[0].html).find((l) => l.includes("/newsletter/confirm?t="))!;
+	const calls: { email: string; first: boolean; sentAt: number | null }[] = [];
+	const handler = createNewsletterHandler(nl, {
+		redirects: { confirmed: "/thanks" },
+		afterConfirm: (sub, info) => {
+			calls.push({ email: sub.email, first: info.firstConfirmation, sentAt: info.sentAt });
+			return info.firstConfirmation ? `/welcome?e=${encodeURIComponent(sub.email)}` : null;
+		},
+	});
+	const first = await handler(new Request(confirm));
+	assert.equal(first.status, 303);
+	assert.equal(first.headers.get("location"), "/welcome?e=bo%40example.org");
+	// A second open (a scanner, or the reader again) isn't the first confirmation.
+	const second = await handler(new Request(confirm));
+	assert.equal(second.headers.get("location"), "/thanks");
+	assert.deepEqual(calls.map((c) => c.first), [true, false]);
+	assert.ok(calls[0].sentAt && Math.abs(calls[0].sentAt - Date.now()) < 60_000, "sentAt is when the link was made");
+});
+
+test("afterConfirm: cross-origin URLs and errors fall back to the default", async () => {
+	const { nl, transport } = await setup();
+	await nl.subscribers.subscribe({ email: "cy@example.org" });
+	const confirm = linksIn(transport.sent[0].html).find((l) => l.includes("/newsletter/confirm?t="))!;
+	const offsite = createNewsletterHandler(nl, { afterConfirm: () => "https://evil.example/x" });
+	const res = await offsite(new Request(confirm));
+	assert.equal(res.status, 200);
+	assert.match(await res.text(), /subscribed/i);
+	const throws = createNewsletterHandler(nl, { afterConfirm: () => { throw new Error("boom"); } });
+	assert.equal((await throws(new Request(confirm))).status, 200);
+	// A bad token never reaches the hook.
+	let called = false;
+	const bad = createNewsletterHandler(nl, { afterConfirm: () => { called = true; return null; } });
+	assert.equal((await bad(new Request(`${confirm}x`))).status, 400);
+	assert.equal(called, false);
+});

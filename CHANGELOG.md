@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 (2026-11-11)
+
+- `createNewsletterHandler({ afterConfirm })`: runs when a confirmation link is opened and can send the reader on (return a same-origin URL or a `Response`), e.g. to sign them in to a member account. It's told whether this open did the confirming and when the link was sent. Errors and cross-origin URLs fall back to the built-in page.
+- `nl.subscribers.confirmToken(token)`: like `confirmByToken`, plus `firstConfirmation` and `sentAt`.
+
 ## 0.1.1 (2026-11-09)
 
 - README: add a no-warranty disclaimer and a note on email and privacy law compliance.

@@ -1,6 +1,6 @@
 {
   "name": "emdash-newsletter",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "A full newsletter platform for EmDash (beehiiv/Kajabi-style): subscribers, double opt-in, campaigns, A/B subjects, segments, automations, referrals, sponsor slots, tracking and a web archive. Sends through Bird, any SMTP server, SparkPost, Mailgun, Postmark, Resend, SendGrid or Amazon SES.",
   "keywords": [
     "emdash",

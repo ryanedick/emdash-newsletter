@@ -17,6 +17,7 @@
  *   GET  /r/<code>             referral link: remembers the referrer, then goes to the site
  *   GET  /archive, /p/<slug>   public web archive
  */
+import type { Subscriber } from "./core.ts";
 import type { Newsletter } from "./newsletter.ts";
 import { archivePage, defaultShell, messagePage, type PageShell, preferencesPage, unsubscribeConfirmPage } from "./pages.ts";
 import { emailStyles, renderBody } from "./render/email.ts";
@@ -29,10 +30,29 @@ export interface HandlerOptions {
 	pageShell?: PageShell;
 	/** Send people to your own pages instead of the built-in ones. */
 	redirects?: { subscribed?: string; confirmed?: string; unsubscribed?: string };
+	/**
+	 * Runs each time a confirmation link is opened, before the built-in page or
+	 * `redirects.confirmed`. Return a Response, or a same-origin URL to redirect to,
+	 * to take over; return nothing to keep the default. Use it to hand a new reader
+	 * on to your site, e.g. to sign them in to an account.
+	 *
+	 * `firstConfirmation` is true only for the open that confirmed the address.
+	 * Mail scanners often open links before the reader does, so don't start a
+	 * session here: send them to a page where they press a button.
+	 */
+	afterConfirm?: (subscriber: Subscriber, info: AfterConfirmInfo) => Response | string | null | undefined | Promise<Response | string | null | undefined>;
 	/** Client IP (defaults to CF-Connecting-IP). */
 	clientIp?: (request: Request) => string | null;
 	/** Max sign-ups per IP per hour (default 10). */
 	ipLimitPerHour?: number;
+}
+
+export interface AfterConfirmInfo {
+	request: Request;
+	/** True only for the open that confirmed the address. */
+	firstConfirmation: boolean;
+	/** When the confirmation link was created (ms since epoch), if known. */
+	sentAt: number | null;
 }
 
 const GIF = Uint8Array.from(atob("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"), (c) => c.charCodeAt(0));
@@ -163,8 +183,19 @@ export function createNewsletterHandler(nl: Newsletter, options: HandlerOptions 
 
 		// ─── confirm ───
 		if (path === "/confirm" && method === "GET") {
-			const sub = await nl.subscribers.confirmByToken(url.searchParams.get("t"));
+			const result = await nl.subscribers.confirmToken(url.searchParams.get("t"));
+			const sub = result?.subscriber ?? null;
 			if (!sub) return html("Link expired", messagePage("This link has expired", ["Confirmation links last 7 days. Sign up again and we'll send a fresh one."], { label: "Back to the site", href: home }), 400);
+			if (options.afterConfirm && result) {
+				try {
+					const out = await options.afterConfirm(sub, { request, firstConfirmation: result.firstConfirmation, sentAt: result.sentAt });
+					if (out instanceof Response) return out;
+					const to = typeof out === "string" ? sameOrigin(out, url) : null;
+					if (to) return redirect(to);
+				} catch (err) {
+					core.log.error("afterConfirm hook failed", { error: String(err) });
+				}
+			}
 			if (options.redirects?.confirmed) return redirect(options.redirects.confirmed);
 			return html("You're in", messagePage("You're subscribed", [`Thanks for confirming, ${escapeHtml(sub.firstName ?? sub.email)}. Your first issue of ${escapeHtml(config.publicationName)} is on its way.`], { label: "Visit the site", href: home }));
 		}

@@ -170,6 +170,23 @@ await nl.campaigns.scheduleCampaign(issue.id, Date.parse("2026-12-01T11:00:00Z")
 
 Register hooks in a module that loads early, such as your Worker entry (`src/worker.ts`).
 
+### After someone confirms
+
+To mount the public routes yourself (`injectRoutes: false`), pass options to `createNewsletterHandler`. `afterConfirm` runs each time a confirmation link is opened. Return a same-origin URL (or a `Response`) to send the reader on, for example to sign them in to an account; return nothing for the built-in page.
+
+```ts
+// src/pages/newsletter/[...path].ts
+const handler = createNewsletterHandler(await getNewsletter(), {
+  afterConfirm: async (subscriber, { request, firstConfirmation, sentAt }) => {
+    if (!sentAt || Date.now() - sentAt > 24 * 3600_000) return null; // old link: just confirm
+    return `/welcome?email=${encodeURIComponent(subscriber.email)}`;
+  },
+});
+export const ALL: APIRoute = ({ request }) => handler(request);
+```
+
+Mail scanners often open links before the reader does, so `firstConfirmation` may already be spent by the time the reader clicks, and the hook shouldn't start a session itself. Send the reader to a page with a button instead. `nl.subscribers.confirmToken(token)` gives the same details (`subscriber`, `firstConfirmation`, `sentAt`) if you handle confirmation in your own route.
+
 To use the engine outside the plugin, call `createNewsletter({ db, secret, config, hooks, transport })` from `emdash-newsletter`. `db` is any D1-compatible database. To add a provider, implement `EmailTransport` (see `src/transport/types.ts`) and pass it as `transport`.
 
 ## How it works
